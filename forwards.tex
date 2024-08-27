@@ -15,7 +15,7 @@
 \begin{document}
 	\title{A Crash-Course on Forward Contracts: Commentary on Urbit's Mayflower Proposal}
 	\author{\texttt{$\sim$diblud-ricbet} (Izaac Mammadov)}
-	\date{\texttt{$\sim$2024.08.24} (Draft V1)}
+	\date{\texttt{$\sim$2024.08.26} (Draft V2)}
 	\maketitle
 	
 	\begin{abstract}
@@ -36,8 +36,9 @@
 		\item Remove the right of Star and Galaxy holders to freely issue their 65,535 planets. (Existing issued planets will be grandfathered in.)
 		\item Create a fungible token (henceforth, for lack of an agreed ticker, called \texttt{URB}) which can be traded in for an arbitrary planet NFT.
 		\item Provide a mechanism for Star and Galaxy holders to trade in their planet-issuing rights in exchange for a corresponding number of \texttt{URB} tokens with a time-locking mechanism.
+		\item Stars wanting to individually release planets outside of the smart-contract will also have to burn 1 \texttt{URB}.
 	\end{enumerate}
-	For example, a star can ``release'' its 65,535 planets into the smart-contract, which provides the star with 65,535, varyingly time-locked \texttt{URB} tokens. The number of \texttt{URB} tokens is always equal to (or less than or equal to if you don't count time-locked \texttt{URB}) the number of planets that the smart-contract has available to issue. Thus \texttt{URB} holders are always guaranteed the right to trade-in for a planet.
+	For example, a star can ``release'' its 65,535 planets into the smart-contract, which provides the star with 65,535, varyingly time-locked \texttt{URB} tokens. Not considering burns via point 4 above, the number of \texttt{URB} tokens is always equal to (or less than or equal to if you don't count time-locked \texttt{URB}) the number of planets that the smart-contract has available to issue. Thus \texttt{URB} holders are always guaranteed the right to trade-in for a planet.
 		
 	\subsection{Timelocking Mechanism}
 	The currently propsed time-lock mechanism, as I understand it, for \texttt{URB} tokens (again, very liable to rapid change) is that for a given number of planets that a Star or Galaxy relinquishes into the contract, they receive:
@@ -80,7 +81,7 @@
 		\label{forward-val}
 		f = (F - K)\mathrm{e}^{-rT},
 	\end{equation}
-	where $F$ is the exercise price that a forward contract, with same expiry, of 0 value (to the people going long or short) would have, $K$ is the exercise price of the forward (in our case, 0), and $\mathrm{e}^{-rT}$ is a discounting term meant to represent that ten dollars in 10 years isn't worth as much as ten dollars now. Specifically, $r$ is the continuously compounded risk-free interest rate that financial institutions can borrow/lend money at between each other with low/no-risk, and $T$ is the time until expiry for the forward.\footcite[133]{hull}
+	where $F$ is the exercise price that a forward contract, with same expiry, and no value (to either the people going long or short) would have, $K$ is the exercise price of the forward (in our case, 0), and $\mathrm{e}^{-rT}$ is a discounting term meant to represent that ten dollars in 10 years isn't worth as much as ten dollars now. Specifically, $r$ is the continuously compounded risk-free interest rate that financial institutions can borrow/lend money at between each other with low/no-risk, and $T$ is the time until expiry for the forward.\footcite[133]{hull}
 	
 	Hull proves that this is the only possible no-arbitrage price with the following argument (where $S_T$ is the price of the underlying asset at expiry) ``To see why equation [\ref{forward-val}] is correct, we form a portfolio today consisting of (a) a forward contract to buy the underlying asset for $K$ at a time $T$ and (b) a forward contract to sell the asset for $F$ at time $T$. The payoff from the portfolio at time $T$ is $S_T - K$ from the first contract and $F - S_T$ from the second contract. The total payoff is $F - K$ and is known for certain today. The portfolio is therefore a risk-free investment and its value today is the payoff at time T discounted at the risk-free rate or $(F - K)\mathrm{e}^{-rT}$. The value of the forward contract to sell the asset for $F$ is worth zero [by definition of $F$]. It follows that the value of a (long) forward contract to buy an asset for $K$ at time $T$ must be $(F - K)\mathrm{e}^{-rT}$.''\footcite[133]{hull}
 	
@@ -127,10 +128,96 @@
 	Note nowhere in the calculations nor explanations did the predicted future price movements of \texttt{URB} enter in. Because the forward prices aren't any more a prediction of future prices than spot prices are. If I have a belief that over the next year, \texttt{URB} is going to pump 20\% upwards, I can enter that trade, either by longing spot \texttt{URB}, by longing one-year \texttt{URB} forwards, by longing two-year \texttt{URB} forwards, or even longing six-month \texttt{URB} forwards and rolling them after six months for a further six months. The strategies will all result in similar profits from the upwards move, but the only difference will be that when trading forwards, I'll be subject to forward discount dynamics described above (related to investment-asset / short-selling ability). Forwards don't some-how encapsulate some kind of extra information about long-term price-distribution that aren't already encapsulated in the spot price.
 	
 	\section{Practical Considerations and Issues}
-	TBC
+	\subsection{Forward Contract Expiries}
+	By default, if users can interact with the smart-contract at any time, then the forward contracts issued will have different expiry date/times for each person who uses it. You end up with a situation where no real passive liquidity can form for the forward contracts, because each one is totally unique. The best case scenario, is you have some kind of centralised entity that does RFQ (Request for Quote) trades with individuals, either on a manual or automated basis. I've heard mentioned that the smart contract would also provide this facility. That I feel would be a near-impossible task, or even perhaps impossible task. AMMs can't work in this scenario. The centralised entity providing RFQ trading is also not going to appear overnight.
+	
+	 In the meantime, you're going to have retail holders being given a token that has close to no liquidity. Tlon will probably be a good platform for peer-to-peer trading of these forwards. But almost certainly less-sophisticated people are going to be exploited by more-sophisticated people. Some (hopefully, few) people won't have read this article, and will agree to sell their no-liquidity forwards at a far-greater discount than they should. The essential aspect of liquidity, is that not only does it allow you to buy/sell easily, but it also makes it easy to see what the actual market price for something is. It's not hard to envisage a scenario where someone is buying a 10-year \texttt{URB} forward in one Tlon chat at a 90\% discount, and selling it in another Tlon chat at 80\% discount. All of this money-talk generally has a seedy-quality to it, unbefitting of Urbit communities, and why there is a strong resentment against anykind of crypto-proposals.
+	
+	It doesn't have to be this way though. The solution is a simple one --- make the smart contract only issue forwards which expire at fixed times. Let's say once-a-month (perhaps third Friday of every month to match up with trad-fi options expiry). When you interact with the contracts, the expiry times for the forwards will just be rounded up to the nearest third-Friday of the month. Limit order books can form around these contracts (although presumably with less liquidity). There won't be thousands of different forward contracts trading, and just one per expiry month. Crucially, it's important to design the system such that a 2-year forward, after one year, becomes totally fungible with a 1-year forward. I do worry however, that there won't be enough liquidity to form the $\mathcal{O}(n^2)$ different 1-to-1 AMMs for the forward contracts, and any limit order books will have way too little liquidity to make them meaningfully useful.
+	
+	\subsection{Planet Pricing}
+	Under no-arbitrage assumptions, the value of an \texttt{URB} token must be greater than or equal to the floor price of Planet NFTs. If not, simply redeem the \texttt{URB} for a planet, and sell the planet immediately at its floor price to lock in a guaranteed profit. It's not quite guaranteed, due to the fact, that you may not always be able to sell a planet for the floor price (if your redeemed planet happens to be the worst planet of all the planet NFTs listed), but I still feel comfortable calling this an arbitrage.
+	
+	However, under no-arbitrage assumptions, must the value of \texttt{URB} be equal to the floor price of the planet NFTs? That depends on the value of the strip of forwards and \texttt{URB} tokens received by a star/galaxy for relinquishing one planet, based on the discussions in Section 2. To be concrete, let's say that the value for all assets (tokens + forwards) received for relinquishing a planet is $x$ multiplied by the value of an \texttt{URB} token ($0.05 < x \leq 1$). This means that the no-arbitrage range for \texttt{URB} vs the floor price of a planet $\phi$ is as follows:
+	\begin{equation}
+		\label{planet range}
+		\phi \leq \texttt{URB} \leq \frac{\phi}{x},
+	\end{equation}
+	which means in its worse case scenario (where all forwards are considered worthless) that the no-arbitrage bounds for \texttt{URB} are:
+	\begin{equation}
+		\phi \leq \texttt{URB} \leq 20\phi.
+	\end{equation}
+	The lower bound for Equation \ref{planet range} comes from the argument given in the first paragraph. The upper bound comes from the fact that if $ \phi < x\times\texttt{URB}$, then any star/galaxy holders would immediately buy up an arbitrary planet at its floor price, relinquish a planet into the Mayflower contract, selling all tokens and forwards received. This results in a locked-in profit of $x \times \texttt{URB} - \phi$, with the only change in scenario being the star has swapped out an arbitrary planet it relinquished, for one it bought in the open NFT market.
+	
+	That being said, there are some rationality arguments which would hopefully keep the two values mostly in line. Firstly, the \texttt{URB} token has no utility other than providing one with a planet. The token trading an order of magnitude higher than the floor price of planets would be an exhibition of gluttonous speculation (which to be fair isn't rare in crypto).
+	
+	Secondly, as the \texttt{URB} token starts to trade higher than the floor price of Planet NFTs, fewer and fewer people would onboard onto Urbit by buying an \texttt{URB} token, and instead would go directly to buy a Planet NFT, thus moving demand from \texttt{URB} to the planet NFTs.
+	
+	If \texttt{URB} begins trading far above the floor price of planets, this could seriously damage the reputation of the whole endeavour and make people feel that this really is a shitcoin after all. A potential solution to be considered is to add the ability for anyone to submit a non-fresh planet into the Mayflower contract for an immediate payout of 1 \texttt{URB}. This doesn't affect the supply of planets at all, and simply moves already spawned planets from outside the Mayflower contract to inside it. It will lead to \texttt{URB} only have one correct no-arbitrage price, which is being equal to $\phi$.
+	
+	\subsection{Regulatory Issues}
+	Forwards are derivatives (scary D word!) and so fall directly and without ambiguity into the wheelhouse of the CFTC. While in spot markets, you can get an easy defence to the SEC by making a good enough argument that you aren't a security, you don't get the same privelege with derivatives. Commodity derivatives and security derivatives are treated similarly by the CFTC. While physically-settled forwards (as these contracts are) generally have fewer regulatory obstacles than futures and options, it is still a very important issue to consider.
+	
+	From a regulator's perspective, the Mayflower contract is going to be selling off-exchange unlisted derivatives to completely unknown US counterparties (since it's on DeFi and you can't block US IPs on Ethereum), who aren't required to show that they have any understanding or any knowledge about what these things even are. I understand the Urbit Foundation are/will be receiving extensive legal advice on these issues, which is important. I expect there to be major shake-ups to these plans based on this legal advice.
+
+	\subsection{Manual Release of Planets}
+	The initial proposal indicated that if a star or galaxy wanted to manually release a planet (outside of the smart-contract), they would have to burn 1 \texttt{URB}. This is a poor mechanism. I would strongly push for an alternative mechanism which is that they must swap 1 \texttt{URB} for the tokens and forwards that you get from relinquishing a planet into the contract, in order to release a planet.
+	
+	The initally proposed mechanism is bad for a few reasons. One of them is that the burned \texttt{URB} effectively leads to a reduction in the \texttt{URB} supply with no corresponding release of a planet from the smart-contract. This will lead to some planets forever being locked in the smart-contract, never retrievable, even if all \texttt{URB} tokens are used to redeem planets. The alternative for this, is that the \texttt{URB} token doesn't get actually burned, but rather goes to the Urbit Foundation wallet (horrible PR), or cumulatively airdropped periodically to the community (logistically hard).
+	
+	Another big reason, is that it imposes a totally arbitrary tax on stars and galaxies that wish to specifically own one of their own planets rather than an arbitrary planet from the Mayflower contract. It will lead to the total death of "slightly" rare planet NFTs from being listed (those of value slightly higher than 1 \texttt{URB} due to their slightly interesting @p), since from the star's/galaxy's perspective, it is not worth paying the 1 \texttt{URB} tax on top of the value lost in not releasing the planet into the Mayflower contract. 
+	
+	My alternative mechanism for manual release of planets makes it so that a star/galaxy is not economically better or worse off when it manually releases a planet compared to it relinquishing a planet into the smart contract, and then claiming an arbitrary planet from the smart-contract. It doesn't make sense for either of those scenarios to be economically incentivised more than the other. Neither scenario serves the goals of this project more than the other. This lack of economic penalty also means that it is always true that the number of \texttt{URB} tokens out there (including time-locked \texttt{URB}) is always exactly equal to the number of planets the smart-contract has available to issue.
+	
+	
+	\subsection{Discontinuous Reduction in the Value of Stars and Galaxies}
+	All of this subsection equally applies to galaxies to a lesser extent, but for brevity, I will write only from the perspective of stars. Stars before the execution of this project are completely different assets with different rights and abilities to stars after the Mayflower smart-contract goes live. This means that, if stars are being priced rationally, it shouldn't be surprising to see a discontinuous jump at the precise time that the Mayflower smart-contract activates. 
+	
+	Say that the abilities of a star not-relating to issuing planets has value $S$. This will not be directly affected by Mayflower and so won't form part of the discontinuous jump. Then assume that all planets are equally valued and that a planet is worth $P$. This is also not directly affected by Mayflower. The project changes the supply of planets, but not their instantaneous value at the precise moment of Mayflower execution. Before the changes, a star will be worth:
+	\begin{equation}
+		S + 65535P,
+	\end{equation}
+	while after the changes, a star will be worth:
+	\begin{equation}
+		S + 65535\times\texttt{URB}\times (0.05 + 0.1d_1 + 0.1d_2 + 0.25d_5 + 0.5d_{10}),
+	\end{equation}
+	where $d_i$ is the discount factor for the zero-strike $i$-year \text{URB} forward, which in the notation of Section 2 would be written as $f/S$.
+	
+	If you making the assumption that 1 \texttt{URB} will be equal to the value of 1 $P$ (one planet), then this will be an immediate negative jump in star price at the launch of Mayflower. The only ways that this model will not lead to any negative jump is: 
+	\begin{enumerate}
+		\item $\texttt{URB} > P$: The \texttt{URB} token trades much higher than the value of a planet.
+		\item $d_i = 1$: All forwards have value exactly equal to the spot \texttt{URB} price.
+		\item The market isn't pricing assets rationally.
+	\end{enumerate}
+	
+	Psychologically, an immediate discontinuous negative jump in asset price isn't a great way to start the launch of the project. Star holders will rightly have grievances that the UF has taken (or stolen, depending on your perspective) a haircut off their asset by downgrading their rights of immediate planet-issuance to time-locked planet-issuance.
+	
+	\subsection{Forward Selling has the same effects as Spot Selling}
+	The idea behind making the forward contracts tradeable as opposed to having a traditional lockup is to give users the ability to cash-out at any time. This is a very noble and righteous end. Unfortunately, it acts completely oppositely to the main goal of the project which is to increase the price of planets/\texttt{URB}. A key fact which I feel is being overlooked is that the selling of forwards has precisely the same effect on price as the selling of spot. Someone selling millions of dollars worth of \texttt{BTC} perpetual futures has exactly the same downwards effect on price as someone selling millions of dollars worth of \texttt{BTC} spot.
+	
+	Yes, this project reduces \texttt{URB}/planet supply. That is correct. But that supply simply gets redirected into \texttt{URB} forwards. A selling pressure on \texttt{URB} forwards is equivalent to a selling pressure on \texttt{URB}. Arbitrageurs/traders will act to transfer selling pressure from forwards to spot and ensure the prices follow the rules described in Section 2. It's the same way that arbitrageurs will transfer selling pressure from \texttt{BTC} perpetual futures to \texttt{BTC} spot.
+	
+	The fact of the matter is, that lockups don't work but for their nefarious nature. They only work when participants are stopped in some way from de-risking when they want to. If you try to remove their nefarious nature, and allow participants to de-risk (in this case by selling the forwards), the lockup doesn't work, and the negative selling pressure still gets transferred to the market (in this indirectly, first to the forwards and then to spot).
+	
+	The unfortunate conclusion is that Project Mayflower will only reduce the selling pressure on planets in so far as it makes the forwards illiquid, tricky to sell, or only able to be sold at very large irrational discounts.
 	
 	\section{Advice to Current Address Space Holders}
-	TBC
-
+	\subsection{Don't Rush to Act}
+	Everything I've written is based on no official announcements and almost certainly the details of the project will change and be iterated upon multiple times. There is almost certainly nothing that needs to be done right now before more details are announced. The grandfathered-planets borderline almost certainly will be only after more details are released. If not, that would be a huge betrayal by the UF.
+	
+	\subsection{Read Hull}
+	As more details get released and you become more and more confident that you are going to face an opportunity to buy/get given derivatives by the smart-contract, you need to educate yourself on them. If what I wrote in Section 2 is new information to you, you are not in a position to make rational decisions as to the price of forward derivatives. The book that I reference throughout (which you can find in references) is the derivative traders' bible. I know it's long (800 pages), focus on the chapters to do with forwards. There's a reason regulators hate retail trading this stuff. It's because they often get absolutely rekt. If you're trading these things, not knowing all the theory that ``sophisticated'' traders do, you're just asking for trouble.
+	
+	This advice equally goes to the UF and whoever is in charge of theory-crafting these ideas. If you're going to be releasing derivatives to the public, the success of which is esssential to the foundation's future, you need to understand them inside-out. Not in a crypto-degen tokenomics way. In the way that actual professional traders understand this stuff.
+	
+	\subsection{Consider Releasing your Planets before Execution}
+	If there is some way to get your star's planets grandfathered in, you will likely be better off than going into the execution-day with a virgin star. The only way that you'd rather have held a virgin star versus an emptied star and all of the individual planets is if \texttt{URB} trades above the price of planet NFTs, and/or the forwards all trade with close to no discount. Remember that a planet inside of a star is worth $P$ right now, and $\texttt{URB}(0.05 + 0.1d_1 + \ldots)$ after the change. 
+	
+	As more information comes up, consider deeply what the implications of this change are, and what are the possible scenarios that can happen on execution-day. Consider very strongly whether it'll be in your self-interest to write/run a script that will release and boot every single one of your star's planets to get them all grandfathered in. 
+	
+	Giving the advice above may be totally against the goals of reducing planet supply, but I feel it is in everyone's interest to receive total truthful information. Unfortunately, any type of proposal like this is always going to be a victim of Le Chatelier's law (for Chemists) or Lenz's law (for Physicists) in that any proposed future change to reduce supply is going to suddenly increase supply in the short-term from people trying to get around the change.
+	
+	\subsection{Discuss}
+	I'm not infallible. Anything I've written above is open to critique and opposition. The community deserve to hear your critique and opposition if you have one. What Urbit desperately needs now is more structured long-form information/discourse, and so if you feel you can contribute in that regard, please do so. Once agian, the link to the GitHub page for this PDF is \href{https://github.com/IzaacMammadov/forwards-for-urbiters}{here}.
 	\printbibliography
 \end{document}
